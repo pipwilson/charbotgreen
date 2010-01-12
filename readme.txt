@@ -14,10 +14,9 @@ There are four easy steps:
 1. Installing jruby 
 -------------------
 
-# see http://wiki.jruby.org/wiki/Getting_Started#Installing_JRuby
+# see http://jruby.org/getting-started
 
-curl -O http://dist.codehaus.org/jruby/jruby-bin-1.1.6RC1.zip
-unzip jruby-bin-1.1.6RC1.zip
+Download from http://jruby.org/download
 
 
 2. Installing h2
@@ -31,6 +30,8 @@ nohup java -cp h2/bin/h2.jar org.h2.tools.Server &
 
 3. Installing Json Pure
 -----------------------
+
+# add jruby and h2 to the PATH
 
 PATH=$PATH:jruby-1.1.6RC1/bin:h2/bin/h2.jar
 export PATH

@@ -20,8 +20,10 @@ module JavaSql
   include_package 'java.sql'
 end
 
-class TodaysTwits
+# This class, which you should cron to run every five minutes, looks in the database to find out what programmes are on now
+# and announces it on Twitter
 
+class TodaysTwits
 
  def TodaysTwits.foo(text)
        u = "http://twitter.com/statuses/update.json"

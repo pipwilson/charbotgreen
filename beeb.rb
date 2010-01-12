@@ -20,7 +20,7 @@ module JavaSql
   include_package 'java.sql'
 end
   
-
+# This class parses a JSON representation of today's programmes and stores them in a database
 
 class Twitter
 
