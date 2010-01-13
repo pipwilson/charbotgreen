@@ -19,22 +19,23 @@ There are four easy steps:
 Download from http://jruby.org/download
 
 
-2. Installing h2
-----------------
+2. Installing sqlite3
+---------------------
 
-curl -O http://www.h2database.com/h2-2008-09-26.zip
-unzip h2-2008-09-26.zip
+Download and install the relevant binary version. 
+On Ubuntu this is in Synaptic.
+On Windows you can download the sqlitedll zip file and unzup it into c:\ruby\bin
 
-nohup java -cp h2/bin/h2.jar org.h2.tools.Server &
+gem install sqlite3-ruby
 
+To inspect the database you can either use the command-line tool that comes
+with SQLite on Ubuntu (separate download on Windows) or a GUI like
+http://www.yunqa.de/delphi/doku.php/products/sqlitespy/index (Windows) or
+http://sqlitebrowser.sourceforge.net/index.html (cross platform) or
+https://addons.mozilla.org/en-US/firefox/addon/5817 (firefox add-on)
 
 3. Installing Json Pure
 -----------------------
-
-# add jruby and h2 to the PATH
-
-PATH=$PATH:jruby-1.1.6RC1/bin:h2/bin/h2.jar
-export PATH
 
 jruby -S gem install json_pure 
 
@@ -42,11 +43,13 @@ jruby -S gem install json_pure
 4. Running the ruby files
 -------------------------
 
-CLASSPATH=h2/bin/h2.jar
-export CLASSPATH
-
 curl -O http://svn.foaf-project.org/foaftown/2009/charbotgreen/beeb.rb
 curl -O http://svn.foaf-project.org/foaftown/2009/charbotgreen/todaysTwits.rb
+
+OR
+
+svn co http://svn.foaf-project.org/foaftown/2009/charbotgreen/ .
+
 
 # edit the todaysTwits.rb with the correct username and password
 
