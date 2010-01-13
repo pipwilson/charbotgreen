@@ -5,7 +5,9 @@ CharBotGreen is a twitter bot written in jruby using
 http://www.bbc.co.uk/radio4/programmes/schedules/fm/today.json
 (see http://www.bbc.co.uk/programmes/developers#alternateserialisations)
 
-The author is Libby Miller, http://nicecupoftea.org 
+The original author is Libby Miller (http://nicecupoftea.org ) and the code is available on http://svn.foaf-project.org/foaftown/2009/charbotgreen/
+This fork is by Phil Wilson (http://philwilson.org/) and the code is on http://github.com/pipwilson/charbotgreen
+
 The license is MIT (MIT-License.txt).
 
 There are four easy steps:
