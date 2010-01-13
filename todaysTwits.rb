@@ -98,7 +98,7 @@ class TodaysTwits
         x = 0
         while x < arr.length
           puts arr[x]
-          #TodaysTwits.post(arr[x])
+          TodaysTwits.post(arr[x])
           x = x + 1
         end
 
