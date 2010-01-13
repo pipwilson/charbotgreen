@@ -25,7 +25,8 @@ class Twitter
         (:starttime, :pid, :title, :subtitle);
     INSERT
 
-    @db = SQLite3::Database.new('beeb.db')
+    # should probably go in a constructor or something
+    @db = SQLite3::Database.open('beeb.db')
 
     def Twitter.status()
 
@@ -104,6 +105,8 @@ class Twitter
             puts "There was an error inserting a row: ", $!
         end
    end
+
+    # where to put an explicit @db.close() ?
 
 end
 

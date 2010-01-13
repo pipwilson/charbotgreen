@@ -3,144 +3,108 @@
 # Copyright (c) 2008 Libby Miller
 # Licensed under the MIT (MIT-LICENSE.txt)
 
-require 'java'
 require 'rubygems'
 require 'uri'
 require 'open-uri'
 require 'net/http'
 require 'json/pure'
-
-import 'org.h2.Driver' 
-
-module JavaLang
-  include_package "java.lang"
-end
-
-module JavaSql
-  include_package 'java.sql'
-end
+require 'sqlite3'
 
 # This class, which you should cron to run every five minutes, looks in the database to find out what programmes are on now
 # and announces it on Twitter
 
 class TodaysTwits
 
- def TodaysTwits.foo(text)
-       u = "http://twitter.com/statuses/update.json"
-       url = URI.parse u
-       puts "sending update #{text}"
-                  
-       req = Net::HTTP::Post.new(url.path)
-       req.basic_auth 'username', 'password' # put the real username and pass here
-       req.set_form_data({'status'=>text}, ';') 
-       res = Net::HTTP.new(url.host, url.port).start {|http|http.request(req) }
+    # Get anything now or in the next 5 mins - non-inclusive for 5 mins' time
+    # So at 55, things at 00 will have to wait for the next thing
+    # but 58 will be caught
+    SQL_SELECT_NEXT_PROG = "select * from beeb where time(starttime) >= time('now') AND time(starttime) < time('now', '+5 minutes');"
 
-       j = nil
-       begin
-           j = JSON.parse(res.body)
-       rescue OpenURI::HTTPError=>e
-           case e.to_s
-               when /^404/
-                   raise 'Not Found'
-               when /^304/
-                   raise 'No Info'
-               when /^error/
-                   raise 'Error'
-           end
-       end
+    @db = SQLite3::Database.open('beeb.db')
 
- end
+    def TodaysTwits.post(text)
+        u = "http://twitter.com/statuses/update.json"
+        url = URI.parse u
+        puts "sending update #{text}"
 
- # Fix up today's date in the format we want
- # Probably a better way!
+        req = Net::HTTP::Post.new(url.path)
+        req.basic_auth 'username', 'password' # put the real username and pass here
+        req.set_form_data({'status'=>text}, ';')
+        res = Net::HTTP.new(url.host, url.port).start {|http|http.request(req) }
 
- begin
-  arr = []
-  d = Date.today
-  da = DateTime.now # this is GMT apparantly 
-
-# Adding 5 mins to current time
-# Date, Time, DateTime can all do this I think but googling around 
-# this seems the best way 
-
-  da1 = DateTime.now + (5/1440.0) 
-  h = da.hour
-  m = da.min
-  m0 = da.min
-
-  h1 = da1.hour
-  m1 = da1.min
-  if h < 10
-    h = "0#{h}"
-  end
-  if m < 10
-    m = "0#{m}"
-  end
-
-  if h1 < 10
-    h1 = "0#{h1}"
-  end
-  if m1 < 10
-    m1 = "0#{m1}"
-  end
-
-  # t is now, t1 is 5 mins head
-
-  t = "#{h}:#{m}:00"
-  t1 = "#{h1}:#{m1}:00"
-  puts "date #{d}"
-  puts "time is #{t} t1 is #{t1}"
-  conn = JavaSql::DriverManager.getConnection("jdbc:h2:tcp://localhost/~/test","sa","");
-  stmt = conn.createStatement
-
-  # Get anything now or in the next 5 mins - non-inclusive for 5 mins' time
-  # So at 55, things at 00 will have to wait for the next thing
-  # but 58 will be caught
-
-  txt = "SELECT * FROM beeb WHERE D = '#{d}' AND T >= '#{t}' AND T < '#{t1}';"
-  rs = stmt.executeQuery(txt)
-  while (rs.next) do
-    #puts "found: #{rs.getString("d")} #{rs.getString("name")}\n"
-    txt = rs.getString("name")
-    if txt.length > 61 
-      txt = txt[0,58]+"..."
+        j = nil
+        begin
+            j = JSON.parse(res.body)
+        rescue OpenURI::HTTPError=>e
+            case e.to_s
+                when /^404/
+                    raise 'Not Found'
+                when /^304/
+                    raise 'No Info'
+                when /^error/
+                    raise 'Error'
+            end
+        end
     end
-    ti = rs.getTime("t")
-    tim = 0
-    if ti.to_s =~ /(\d\d):(\d\d):(\d\d)/
-      tim = $2
+
+    begin
+        arr = []
+
+        @db.results_as_hash = true
+        rows = @db.execute(SQL_SELECT_NEXT_PROG);
+
+        # generate the messages and put them in an array
+
+        rows.each do |row|
+
+            title = row["TITLE"]
+            subtitle = row["SUBTITLE"]
+
+            if subtitle =~ /\d{2}\/\d{2}\/\d{4}/
+                # it's just a date so ignore it
+            else
+                title = title + ": " + subtitle
+            end
+
+            if title.length > 70
+              title = title[0, 66]+"..."
+            end
+
+            pid = row["PID"]
+
+            # is this going to start in the future or starting this minute?
+            # what's the difference between the starting minute and the current minute?
+            starttime = row["STARTTIME"]
+
+            timeTilStart = Time.parse(starttime).min - Time.now.min
+
+            # Text niceness
+            progInfo = "#{title} #pid:#{pid} http://bbc.co.uk/i/#{pid.gsub('b00', '')}"
+
+            if timeTilStart > 0
+              arr.push("In a few minutes on Radio 4: " + progInfo)
+            else
+              arr.push("Starting now on Radio 4: " + progInfo)
+            end
+
+            puts "#{arr.length} items to send"
+        end
+
+        # The longest message looks like this:
+        # "In a few minutes on Radio 4: TITLE #pid:b00pnpn0 http://bbc.co.uk/i/pnpn0"
+        # It is 68 chars + title, leaving us 72 chars for TITLE and SUBTITLE
+
+        # Send the found data to Twitter
+        x = 0
+        while x < arr.length
+          puts arr[x]
+          #TodaysTwits.post(arr[x])
+          x = x + 1
+        end
+
+    rescue Exception => error
+        puts "There was an error doing stuff: " + error.backtrace.join("\n")
     end
-    mdiff = tim.to_i - m0
-
-    # Text niceness
-
-    if mdiff > 0
-      arr.push("In a few minutes on Radio 4: #{txt} #pid:#{rs.getString("pid")} http://www.bbc.co.uk/programmes/#{rs.getString("pid")}")
-    elsif mdiff < 0 #should never happen
-      arr.push("Just started on Radio 4: #{txt} #pid:#{rs.getString("pid")} http://www.bbc.co.uk/programmes/#{rs.getString("pid")}")
-    else
-      arr.push("Starting now on Radio 4: #{txt} #pid:#{rs.getString("pid")} http://www.bbc.co.uk/programmes/#{rs.getString("pid")}")
-    end
-    puts "#{arr.length} items to send"
-  end
-  rs.close
-  stmt.close
-  conn.close()
-
-  # Send the found data to Twitter
-
-  now = 0
-  while now < arr.length
-    TodaysTwits.foo(arr[now])    
-    now += 1
-  end
-
-rescue JavaLang::ClassNotFoundException
-  puts "ClassNotFoundException"
-rescue JavaSql::SQLException
-  puts "SQLException"
-
-  end
 
 end
 
