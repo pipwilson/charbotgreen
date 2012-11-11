@@ -27,7 +27,7 @@ Download from http://www.ruby-lang.org/en/downloads/
 On Ubuntu you can install sqlite from Synaptic.
 
 On Windows you can download the sqlitedll zip file from 
-http://www.sqlite.org/download.html and unzup it into C:\Ruby\bin
+http://www.sqlite.org/download.html and unzip it into C:\Ruby\bin
 
 Install the Ruby bindings
 
